@@ -2,7 +2,7 @@
 
 This project implements a **secure One-Time Pad (OTP) file encryption tool** in C++. It allows you to encrypt and decrypt files using either a **user-provided key** or an **auto-generated key**.
 
----
+
 
 ## Features
 
@@ -13,7 +13,7 @@ This project implements a **secure One-Time Pad (OTP) file encryption tool** in 
 - Compatible with all file types.
 - Encrypted files are near unbreakable.
 
----
+
 
 ## User Guide
 
@@ -34,7 +34,7 @@ This project implements a **secure One-Time Pad (OTP) file encryption tool** in 
 - C++17 or later  
 - Compatible with Windows, Linux, and macOS terminals  
 
----
+
 
 ## Notes/Known Issues
 - Due to the file name generation implementation method, attempting to encrypt a file twice within 1 second without a user provided key throws an error. This will be fixed.
