@@ -61,6 +61,31 @@ void Encrypt::encWithKey(const std::string &srcFilename, const std::string& keyN
 
 }
 
+void Encrypt::directoryEncrypt(const std::string &srcDir, const std::string &keyName, const std::string &dstDir)
+{
+    // todo: iterate through everything and encrypt with original encrypt function, then return a copy with the same directory // 1/23 done
+    // IDEA: ENCRYPT AND RECREATE AS WE ITERATE, SO WE OPEN A FOLDER===> SIGNALS TO CREATE ONE // done
+    std::filesystem::path rootDirectory{srcDir};
+    if(!std::filesystem::exists(rootDirectory) || !std::filesystem::is_directory(rootDirectory)){
+    throw std::runtime_error("Source directory does not exist or is not a directory");
+    }
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDirectory)) {
+        if(entry.is_directory()){
+            std::filesystem::create_directories(std::filesystem::path(dstDir) / std::filesystem::relative(entry.path(), rootDirectory)); // create mirror dir in dst
+        } else if(entry.is_regular_file()){
+            // encrypt file and place in new dir
+            std::filesystem::path srcPath{entry.path()};
+            std::filesystem::path dstPath = std::filesystem::path(dstDir) / std::filesystem::relative(srcPath, rootDirectory);
+            std::filesystem::path encFileName{srcPath.stem().string() + "_encrypted" + srcPath.extension().string()};
+            std::filesystem::path finalDstPath{dstPath.parent_path() / encFileName};
+            std::filesystem::create_directories(finalDstPath.parent_path());
+            encrypt(srcPath.string(),keyName,finalDstPath.string());
+        } else{
+            std::cout << "Skipping non-regular file: " << entry.path() << "\n";
+        }
+    }
+}
+
 void Encrypt::padWithKey(std::ifstream &src, const std::string &keyName, std::ofstream &dst)
 {
     std::random_device rd;

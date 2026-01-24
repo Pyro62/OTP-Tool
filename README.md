@@ -24,10 +24,15 @@ A secure One-Time Pad (OTP) file encryption tool in C++. This tool encrypts and 
 ```
 ### 2. Encrypt a File without a User-Provided Key
 ```bash
-./otp_encrypt.exe source.txt encrypted.txt
+./otp_encrypt.exe -f source.txt keyName.bin encrypted.txt
 ```
 
 - Key file is generated in directory. 
+
+### 3. Encrypt a Directory with a User-Provided Key
+```bash
+./otp_encrypt.exe -d sourceDir keyName.bin encryptedDir
+```
 
 ## Requirements
 
@@ -36,7 +41,5 @@ A secure One-Time Pad (OTP) file encryption tool in C++. This tool encrypts and 
 
 
 
-## Notes/Known Issues
-- Due to the file name generation implementation method, attempting to encrypt a file twice within 1 second without a user provided key throws an error. This will be fixed.
-- genKey creates a new std::random_device per call, will slow down encryption of larger files. 
-- Would like to try to add greater variety to the key names, rather than just numbers.
+## Notes
+- Decrypt files by running the program again with the same key using the ciphertext as source file.
