@@ -7,6 +7,14 @@
 
 void Encrypt::encrypt(const std::string& srcFilename,const std::string& keyFilename,const std::string& dstFilename)
 {
+    std::filesystem::path keyPath{keyFilename};
+    auto keySize = std::filesystem::file_size(keyPath);
+
+    std::filesystem::path srcPath{srcFilename};
+    auto srcSize = std::filesystem::file_size(srcPath);
+
+    if(keySize < srcSize) throw std::runtime_error("Invalid Key! Key is smaller than source file.");
+
     std::ifstream src{srcFilename, std::ios::binary};
     std::ifstream key{keyFilename, std::ios::binary};
     std::ifstream check{dstFilename};
@@ -15,7 +23,7 @@ void Encrypt::encrypt(const std::string& srcFilename,const std::string& keyFilen
     
     if(!key) throw std::runtime_error("Could not open key");
     if(!src) throw std::runtime_error("Could not open source");
-
+    key.seekg(keyOffset,std::ios::beg); // doesnt change anything for regular files, but for directory it prevents two time pad vulnerability
     std::ofstream dst{dstFilename, std::ios::binary};
     if(!dst) throw std::runtime_error("Could not open destination file"); // dst as final check, so on fail no creation
     pad(src,key,dst);
@@ -41,6 +49,7 @@ void Encrypt::pad(std::ifstream& src, std::ifstream& key, std::ofstream& dst)
         {
             srcBuffer[i] = srcBuffer[i]^keyBuffer[i];
         }
+        keyOffset+=srcByteQty; // add bytes processed
         dst.write(srcBuffer, srcByteQty);
     }
 }
@@ -65,7 +74,18 @@ void Encrypt::directoryEncrypt(const std::string &srcDir, const std::string &key
 {
     // todo: iterate through everything and encrypt with original encrypt function, then return a copy with the same directory // 1/23 done
     // IDEA: ENCRYPT AND RECREATE AS WE ITERATE, SO WE OPEN A FOLDER===> SIGNALS TO CREATE ONE // done
+    //bugfix needed: if max size of file > keyfile size, throw err
     std::filesystem::path rootDirectory{srcDir};
+    std::filesystem::path keyPath{keyName};
+    uintmax_t keySize = std::filesystem::file_size(keyPath);
+    uintmax_t totalSize{0};
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDirectory)) {
+        if(entry.is_regular_file()){
+            totalSize+=entry.file_size();
+        }
+    }
+    if(totalSize>keySize) throw std::runtime_error("Invalid key: too short for directory encryption");
+
     if(!std::filesystem::exists(rootDirectory) || !std::filesystem::is_directory(rootDirectory)){
     throw std::runtime_error("Source directory does not exist or is not a directory");
     }

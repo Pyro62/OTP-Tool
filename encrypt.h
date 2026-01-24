@@ -17,6 +17,7 @@ class Encrypt{
         void pad(std::ifstream&,std::ifstream&,std::ofstream&);
         void padWithKey(std::ifstream&, const std::string& ,std::ofstream&); // second pad for keygen
         void genKey(char[BUFFER_SIZE], size_t, std::random_device&);
+        uintmax_t keyOffset{0};
 
 };
 
