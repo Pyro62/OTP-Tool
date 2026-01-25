@@ -34,6 +34,11 @@ A secure One-Time Pad (OTP) file encryption tool in C++. This tool encrypts and 
 ./otp_encrypt.exe -d sourceDir keyName.bin encryptedDir
 ```
 
+### 4. Encrypt a Directory without a User-Provided Key
+```bash
+./otp_encrypt.exe -f -d sourceDir keyName.bin encryptedDir
+```
+
 ## Requirements
 
 - C++17 or later  
