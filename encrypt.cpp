@@ -2,6 +2,8 @@
 
 #include <random>
 #include <filesystem>
+#include <vector>
+#include <algorithm>
 
 
 
@@ -13,7 +15,7 @@ void Encrypt::encrypt(const std::string& srcFilename,const std::string& keyFilen
     std::filesystem::path srcPath{srcFilename};
     auto srcSize = std::filesystem::file_size(srcPath);
 
-    if(keySize < srcSize) throw std::runtime_error("Invalid Key! Key is smaller than source file.");
+    if(keySize - keyOffset < srcSize) throw std::runtime_error("Invalid Key! Key is smaller than source file.");
 
     std::ifstream src{srcFilename, std::ios::binary};
     std::ifstream key{keyFilename, std::ios::binary};
@@ -79,17 +81,25 @@ void Encrypt::directoryEncrypt(const std::string &srcDir, const std::string &key
     std::filesystem::path keyPath{keyName};
     uintmax_t keySize = std::filesystem::file_size(keyPath);
     uintmax_t totalSize{0};
+
+    std::vector<std::filesystem::path> allPaths;
+
     for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDirectory)) {
+        allPaths.push_back(entry.path());
         if(entry.is_regular_file()){
             totalSize+=entry.file_size();
         }
     }
+    std::sort(allPaths.begin(), allPaths.end());
+
     if(totalSize>keySize) throw std::runtime_error("Invalid key: too short for directory encryption");
 
     if(!std::filesystem::exists(rootDirectory) || !std::filesystem::is_directory(rootDirectory)){
     throw std::runtime_error("Source directory does not exist or is not a directory");
     }
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDirectory)) {
+
+    for (const auto& path : allPaths) {
+        std::filesystem::directory_entry entry{path};
         if(entry.is_directory()){
             std::filesystem::create_directories(std::filesystem::path(dstDir) / std::filesystem::relative(entry.path(), rootDirectory)); // create mirror dir in dst
         } else if(entry.is_regular_file()){
@@ -106,7 +116,44 @@ void Encrypt::directoryEncrypt(const std::string &srcDir, const std::string &key
     }
 }
 
-void Encrypt::padWithKey(std::ifstream &src, const std::string &keyName, std::ofstream &dst)
+void Encrypt::encDirWithKey(const std::string &srcDir, const std::string &keyName, const std::string &dstDir)
+{
+    std::filesystem::path rootDirectory{srcDir};
+    uintmax_t totalSize{0};
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDirectory)) {
+        if(entry.is_regular_file()){
+            totalSize+=entry.file_size(); // get total size of file
+        }
+    }
+    createKeyFile(totalSize, keyName);
+    directoryEncrypt(srcDir,keyName,dstDir);
+}
+
+void Encrypt::createKeyFile(uintmax_t totalSize, const std::string &keyName)
+{
+    std::random_device rd;
+    std::mt19937_64 rng(rd());                // seed ONCE
+    std::uniform_int_distribution<uint8_t> dist(0, 255);
+
+    std::ofstream key{keyName, std::ios::binary};
+    if(!key) throw std::runtime_error("Could not generate key");
+    char keyBuffer[BUFFER_SIZE]; 
+    totalSize*=2; // double size for safety
+    while (totalSize > 0) {
+
+        size_t chunkSize = std::min<uintmax_t>(BUFFER_SIZE, totalSize); // checks which is smaller
+
+        for (size_t i = 0; i < chunkSize; i++) {
+            keyBuffer[i] = dist(rng);         // generate sequential bytes
+        }
+        key.write(keyBuffer, chunkSize);
+
+        totalSize -= chunkSize;
+    }
+
+}
+
+void Encrypt::padWithKey(std::ifstream &src, const std::string &keyName, std::ofstream &dst) // lwk sloppy shoulda used filesystem earlier.
 {
     std::random_device rd;
     std::ofstream key{keyName, std::ios::binary};
@@ -118,7 +165,7 @@ void Encrypt::padWithKey(std::ifstream &src, const std::string &keyName, std::of
         src.read(srcBuffer,BUFFER_SIZE);
         srcByteQty = src.gcount();
         if(srcByteQty==0) break;
-        genKey(keyBuffer,srcByteQty, rd); //key.read(keyBuffer,srcByteQty); // read srcbyteqty instead of buffer size so they usually match, also pulls key
+        genKey(keyBuffer,srcByteQty, rd); //generates srcbyteqty amt of bytes in keybuffer, passes in rd
         for (size_t i{0}; i < srcByteQty; i++)
         {
             srcBuffer[i] = srcBuffer[i]^keyBuffer[i];
@@ -131,10 +178,12 @@ void Encrypt::padWithKey(std::ifstream &src, const std::string &keyName, std::of
 void Encrypt::genKey(char buffer[BUFFER_SIZE], size_t byteQty, std::random_device& rd)// modifies buffer with random stuff, returns it
 {
      // move to pad, so one rd per operation // todo, remove multiple rd() calls, do research and stuff to seed a good rng stuff
+    std::mt19937_64 rng(rd());
+    std::uniform_int_distribution<uint8_t> dist(0, 255);
     for (size_t i = 0; i < byteQty; i++)
-    {
+    { 
         
-        buffer[i] = static_cast<char>(rd());
+        buffer[i] = dist(rng);
     }
     
 }
