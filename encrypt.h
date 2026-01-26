@@ -5,7 +5,8 @@
 #include <cstddef>
 #include <iostream>
 #include <random>
-
+#include <filesystem>
+#include <vector>
 #define BUFFER_SIZE 1024
 
 class Encrypt{
@@ -14,6 +15,7 @@ class Encrypt{
         void encWithKey(const std::string&, const std::string&, const std::string&); // two arg, file and dest, key is generated
         void directoryEncrypt(const std::string&, const std::string&, const std::string&);
         void encDirWithKey(const std::string&, const std::string&, const std::string&);
+        void dryRun(const std::string&, const std::string&, const std::string&); 
     private:
         void pad(std::ifstream&,std::ifstream&,std::ofstream&);
         void padWithKey(std::ifstream&, const std::string& ,std::ofstream&); // second pad for keygen

@@ -1,8 +1,4 @@
 #include "encrypt.h"
-
-#include <random>
-#include <filesystem>
-#include <vector>
 #include <algorithm>
 
 
@@ -129,6 +125,62 @@ void Encrypt::encDirWithKey(const std::string &srcDir, const std::string &keyNam
     directoryEncrypt(srcDir,keyName,dstDir);
 }
 
+void Encrypt::dryRun(const std::string &src, const std::string &key, const std::string &dst)
+{
+    std::filesystem::path srcPath{src};
+    std::filesystem::path keyPath{key};
+    std::filesystem::path dstPath{dst};
+    std::filesystem::directory_entry entry{srcPath};
+    uintmax_t keySize = std::filesystem::file_size(keyPath);
+    uintmax_t totalSize{0};
+
+    std::vector<std::filesystem::path> allPaths;
+    std::vector<std::filesystem::directory_entry> skippedFiles;
+
+    if(entry.is_directory()) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(srcPath)) {
+            allPaths.push_back(entry.path());
+            if(entry.is_regular_file()){
+                totalSize+=entry.file_size();
+            }
+        }
+        std::sort(allPaths.begin(), allPaths.end());
+        if(totalSize>keySize){
+            std::cout << "Dry Run Result: \n   Invalid Key. Key size is smaller than total size of files in directory.\n";
+        } else{
+            std::cout <<"Dry Run Result: \n   Valid Key:\n     Total size of files in directory: " << totalSize << " bytes\n     Key size: " << keySize << " bytes\n\n";
+            std::cout << "   MODE: Directory Encryption\n       Source Directory: " << srcPath.string() << "\n       Destination Directory: " << dstPath.string() << "\n\n";
+            std::cout << "   File(s) to be Encrypted:\n";
+            for(const auto& path : allPaths){
+                std::filesystem::directory_entry entry{path};
+                if(entry.is_regular_file()){
+                    std::cout << "       " << entry.path().string()<< "- " << std::filesystem::file_size(path) << " bytes\n";
+                } else if(entry.is_directory()){
+                    std::cout << "       " << entry.path().string() << " [DIR]\n";
+                } else{
+                    skippedFiles.push_back(entry);
+                }
+            }
+            if(!skippedFiles.empty()){
+                std::cout << "\n   Skipped Non-Regular Files:\n";
+                for(const auto& skipped : skippedFiles){
+                    std::cout << "       " << skipped.path().string() << "\n";
+                }
+            }
+        }
+    } else if(entry.is_regular_file()){
+        if(totalSize > keySize){
+            std::cout << "Dry Run Result: \n   Invalid Key. Key size is smaller than source file size. \n";
+        } else{
+            std::cout <<"Dry Run Result: \n   Valid Key:\n     Source file size: " << totalSize << " bytes\n     Key size: " << keySize << " bytes\n\n";
+            std::cout << "   MODE: File Encryption\n       Source File: " << srcPath.string() << "\n       Destination File: " << dstPath.string() << "\n\n";
+            std::cout << "   File to be Encrypted:\n       " << srcPath.string() << "\n";
+        }
+    } else{
+        throw std::runtime_error("Source is neither a file nor a directory");
+    }
+
+}
 void Encrypt::createKeyFile(uintmax_t totalSize, const std::string &keyName)
 {
     std::random_device rd;
