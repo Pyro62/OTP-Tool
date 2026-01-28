@@ -39,6 +39,16 @@ A secure One-Time Pad (OTP) file encryption tool in C++. This tool encrypts and 
 ./otp_encrypt.exe -f -d sourceDir keyName.bin encryptedDir
 ```
 
+### 5. Dry Run "Preview" Mode
+```bash
+./otp_encrypt.exe -dr sourceDir keyDir destDir
+```
+
+### 6. Generate Key without Encrypting
+```bash
+./otp_encrypt.exe -f sourceDir keyName
+```
+
 ## Requirements
 
 - C++17 or later  

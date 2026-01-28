@@ -20,7 +20,11 @@ void inputHandler(int argc, char const * argv[]) // refactor to handle flags and
     try
     {
         if(argc==4){
-            enc.encrypt(argv[1],argv[2],argv[3]);
+            if(std::strcmp(argv[1],"-f")==0){ // is 0 if equal 
+                enc.createKeyFile(argv[2], argv[3]);
+            } else {
+                enc.encrypt(argv[1],argv[2],argv[3]);
+            }
         } else if(argc==5){
             if(std::strcmp(argv[1],"-f")==0){ // is 0 if equal 
                 enc.encWithKey(argv[2],argv[3],argv[4]);
