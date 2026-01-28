@@ -27,7 +27,7 @@ void inputHandler(int argc, char const * argv[]) // refactor to handle flags and
             }else if(std::strcmp(argv[1],"-d")==0){
                 enc.directoryEncrypt(argv[2],argv[3],argv[4]);
             }else if(std::strcmp(argv[1],"-dr")==0){
-                enc.dryRun(argv[2],argv[3],argv[4]);
+                enc.dryRun(argv[0],argv[2],argv[3],argv[4]);
             } 
             else {
                 throw std::runtime_error("Invalid Arguments!");

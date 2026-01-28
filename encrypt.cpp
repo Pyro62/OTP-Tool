@@ -125,8 +125,9 @@ void Encrypt::encDirWithKey(const std::string &srcDir, const std::string &keyNam
     directoryEncrypt(srcDir,keyName,dstDir);
 }
 
-void Encrypt::dryRun(const std::string &src, const std::string &key, const std::string &dst)
+void Encrypt::dryRun(const std::string& prog, const std::string &src, const std::string &key, const std::string &dst)
 {
+    std::filesystem::path progName{prog};
     std::filesystem::path srcPath{src};
     std::filesystem::path keyPath{key};
     std::filesystem::path dstPath{dst};
@@ -146,11 +147,11 @@ void Encrypt::dryRun(const std::string &src, const std::string &key, const std::
         }
         std::sort(allPaths.begin(), allPaths.end());
         if(totalSize>keySize){
-            std::cout << "Dry Run Result: \n   Invalid Key. Key size is smaller than total size of files in directory.\n";
+            std::cout << "Dry Run Result: \n   Invalid Key. Key size is smaller than total size of files in directory.\n"; // case for invalid key
         } else{
-            std::cout <<"Dry Run Result: \n   Valid Key:\n     Total size of files in directory: " << totalSize << " bytes\n     Key size: " << keySize << " bytes\n\n";
+            std::cout <<"Dry Run Result: \n   Valid Key:\n     Total size of files in directory: " << totalSize << " bytes\n     Key size: " << keySize << " bytes\n\n"; // case for success
             std::cout << "   MODE: Directory Encryption\n       Source Directory: " << srcPath.string() << "\n       Destination Directory: " << dstPath.string() << "\n\n";
-            std::cout << "   File(s) to be Encrypted:\n";
+            std::cout << "   File(s) to be Encrypted with " << key << ":\n";
             for(const auto& path : allPaths){
                 std::filesystem::directory_entry entry{path};
                 if(entry.is_regular_file()){
@@ -167,6 +168,7 @@ void Encrypt::dryRun(const std::string &src, const std::string &key, const std::
                     std::cout << "       " << skipped.path().string() << "\n";
                 }
             }
+            std::cout << "\n" << "   Proceed to Encyption by Running:\n       ./" << progName.filename().string() << " -d " << src << " " << key << " " << dst << "\n";
         }
     } else if(entry.is_regular_file()){
         if(totalSize > keySize){
@@ -174,7 +176,8 @@ void Encrypt::dryRun(const std::string &src, const std::string &key, const std::
         } else{
             std::cout <<"Dry Run Result: \n   Valid Key:\n     Source file size: " << totalSize << " bytes\n     Key size: " << keySize << " bytes\n\n";
             std::cout << "   MODE: File Encryption\n       Source File: " << srcPath.string() << "\n       Destination File: " << dstPath.string() << "\n\n";
-            std::cout << "   File to be Encrypted:\n       " << srcPath.string() << "\n";
+            std::cout << "   File to be Encrypted with " << key << ":\n       " << srcPath.string() << "\n";
+            std::cout << "\n" << "   Proceed to Encyption by Running:\n       ./" << progName.filename().string()<<" "  << src << " " << key << " " << dst << "\n";
         }
     } else{
         throw std::runtime_error("Source is neither a file nor a directory");
