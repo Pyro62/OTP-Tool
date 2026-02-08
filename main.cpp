@@ -8,47 +8,50 @@ void inputHandler(int,char const*[]);
 
 
 int main(int argc, char const *argv[]){ 
-    SetConsoleOutputCP(CP_UTF8);
     inputHandler(argc,argv);
     
     return 0;
 }
 
-void inputHandler(int argc, char const * argv[]) // refactor to handle flags and stuff // enc.encrypt(argv[1],argv[2],argv[3]);
-{
+void inputHandler(int argc, char const * argv[]){
     Encrypt enc;
-    try
-    {
-        if(argc==4){
-            if(std::strcmp(argv[1],"-f")==0){ // is 0 if equal 
-                enc.createKeyFile(argv[2], argv[3]);
-            } else {
-                enc.encrypt(argv[1],argv[2],argv[3]);
-            }
-        } else if(argc==5){
-            if(std::strcmp(argv[1],"-f")==0){ // is 0 if equal 
-                enc.encWithKey(argv[2],argv[3],argv[4]);
-            }else if(std::strcmp(argv[1],"-d")==0){
-                enc.directoryEncrypt(argv[2],argv[3],argv[4]);
-            }else if(std::strcmp(argv[1],"-dr")==0){
-                enc.dryRun(argv[0],argv[2],argv[3],argv[4]);
-            } 
-            else {
+    try{
+        auto hasFlag = [&](int pos, const char* flag){
+            return pos < argc && std::strcmp(argv[pos], flag) == 0;
+        };
+        switch(argc) {
+            case 4:
+                if (hasFlag(1, "-f")) {
+                    enc.createKeyFile(argv[2], argv[3]);
+                } else {
+                    enc.encrypt(argv[1], argv[2], argv[3]);
+                }
+                break;  
+            case 5:
+                if (hasFlag(1, "-f")) {
+                    enc.encWithKey(argv[2], argv[3], argv[4]);
+                } else if (hasFlag(1, "-d")) {
+                    enc.directoryEncrypt(argv[2], argv[3], argv[4]);
+                } else if (hasFlag(1, "-dr")) {
+                    enc.dryRun(argv[0], argv[2], argv[3], argv[4]);
+                } else {
+                    throw std::runtime_error("Invalid Arguments!");
+                }
+                break;
+            case 6:
+                if (hasFlag(1, "-f") && hasFlag(2, "-d")) {
+                    enc.encDirWithKey(argv[3], argv[4], argv[5]);
+                } else {
+                    throw std::runtime_error("Invalid Arguments!");
+                }
+                break;
+                
+            default:
                 throw std::runtime_error("Invalid Arguments!");
-            } 
-        } else if(argc==6){
-            if(std::strcmp(argv[1],"-f")==0 && std::strcmp(argv[2],"-d")==0){
-                enc.encDirWithKey(argv[3],argv[4],argv[5]);
-            } else {
-                throw std::runtime_error("Invalid Arguments!");
-            }
-        } else{
-            throw std::runtime_error("Invalid Arguments!");
         }
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
     }
-    
+
 }
